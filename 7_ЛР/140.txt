@@ -1,0 +1,32 @@
+WITH Dat AS
+(SELECT left(convert(varchar, date, 120),3) Dates FROM Battles),
+MinMaxDat AS
+(SELECT min(Dates) MinDates, max(Dates) MaxDates FROM Dat),
+AllDat AS
+(SELECT CAST(MinDates AS int) MinDatesInt FROM MinMaxDat 
+UNION ALL
+ SELECT MinDatesInt + 1 FROM AllDat, MinMaxDat  
+WHERE MinDatesInt + 1 <= MaxDates),
+CountB AS
+(SELECT Dates, count(Dates) CountDats FROM Dat
+GROUP BY Dates)
+
+SELECT CAST(MinDatesInt AS varchar) + '0s' Years, 
+  CASE
+  WHEN CountDats IS NOT NULL THEN CountDats 
+  ELSE 0
+  END CountBattels
+FROM AllDat LEFT JOIN CountB
+ON MinDatesInt = Dates
+
+
+Конвертим числовое значение в строку из даты, чтобы потом добавить окончание "0s", при этом
+выделяем только первые три символа слева. 
+Находим максимальные и минимальные десятилетия битв
+Рекурсией делаем записи по всем десятилетиям между макс и мин значениями в БД
+Считаем колличество битв в десятилетиях
+
+Делаем результирующую таблицу в которой числовое значение конвертится в строку и добавляется окончание "0s",
+дальше с помощью кейса заполняется инфа о колличестве битв
+Соединяем через левое соединение таблицы (Рекурсивную AllDat и CountB) по десяткам лет
+Сортируем по годамС

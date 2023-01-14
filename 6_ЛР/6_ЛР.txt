@@ -1,0 +1,90 @@
+SELECT DISTINCT maker FROM Product
+EXCEPT
+SELECT DISTINCT maker FROM Product P JOIN
+  (SELECT model FROM Product WHERE type = 'PC'
+  EXCEPT
+  SELECT model FROM PC) S
+ON P.model = S.model
+
+=====================================
+SELECT maker FROM Product P JOIN
+(SELECT F.model, F.price FROM
+(SELECT model, price FROM PC) F
+JOIN
+(SELECT max(price) price FROM PC) S
+ON F.price = S.price) O
+ON P.model = O.model
+=======================
+SELECT DISTINCT maker FROM Product P JOIN 
+(SELECT model, max(price) price FROM PC
+GROUP BY model) S
+ON P.model = S.model
+INTERSECT
+SELECT DISTINCT maker FROM Product P JOIN 
+(SELECT model, min(price) price FROM PC
+GROUP BY model) S
+ON P.model = S.model
+======================
+
+============================================================
+SELECT name FROM Passenger p JOIN
+ (SELECT ID_psg, count count FROM
+(SELECT ID_psg, count(ID_psg) count FROM
+  (SELECT ID_psg, town_to FROM Pass_in_trip P 
+        JOIN
+        (SELECT trip_no, town_from, town_to FROM Trip ) T
+    ON P.trip_no = T.trip_no
+   GROUP BY ID_psg, town_to ) f
+GROUP BY ID_psg
+HAVING count(ID_psg) = 2
+  INTERSECT
+SELECT ID_psg, count(ID_psg) count FROM
+  (SELECT ID_psg, town_from FROM Pass_in_trip P 
+        JOIN
+        (SELECT trip_no, town_from, town_to FROM Trip ) T
+    ON P.trip_no = T.trip_no
+   GROUP BY ID_psg, town_from) f
+GROUP BY ID_psg
+HAVING count(ID_psg) = 2) s
+GROUP BY ID_psg, count
+  INTERSECT
+SELECT ID_psg, count(ID_psg) count FROM
+  (SELECT ID_psg, town_from FROM Pass_in_trip P 
+        JOIN
+        (SELECT trip_no, town_from, town_to FROM Trip ) T
+    ON P.trip_no = T.trip_no
+   GROUP BY ID_psg, town_from
+  INTERSECT
+    SELECT ID_psg, town_to FROM Pass_in_trip P 
+        JOIN
+        (SELECT trip_no, town_from, town_to FROM Trip ) T
+    ON P.trip_no = T.trip_no
+    GROUP BY ID_psg, town_to) f
+  GROUP BY ID_psg
+  HAVING  count(ID_psg) = 2
+UNION
+  SELECT ID_psg, count(ID_psg) FROM
+(SELECT ID_psg, town_from, town_to FROM Pass_in_trip P 
+    JOIN
+    (SELECT trip_no, town_from, town_to FROM Trip) T
+    ON P.trip_no = T.trip_no
+    GROUP BY ID_psg, town_from, town_to) L
+  GROUP BY ID_psg
+  HAVING  count(ID_psg) = 1) f
+ON p.ID_psg = f.ID_psg
+
+Пока не забыл как этот мастодонт работает:
+Рзделю повествование на две части, над UNION и под ним
+НАД UNION:
+Находятся ID пассажиров, которые летали туда-обратно хотябы один раз.
+Это все разделяется таке же на две части, разделенные INTERSECT по ссередине:
+в верхней части с помощью INTERSECT находятся колличество городов в которые вылетал пассажир, при чем таких городов должно быть только два,
+ и все эти города должны совпадать с городами вылета
+в нижней части находятся города вылета и находятся соответсвия в таблице с городами прилета, в результате чего получаем ID пассажира и колличество совпавших городов
+группируем их по ID и колличеству городов равных 2
+ПОД UNION:
+Происходит группировка ID пссажиров, городов прилета и отлета (избавление от дубликатов, если пассажир летал одним и тем же маршрутом несколько раз и только им)
+Затем производится группировка ID пссажиров с условием, что колличество перелетоа (без дублиуатов) равно 1
+
+Так с помощью UNION мы получаем сводную таблицу с ID пассажиров и колличеством их разнообразных перелетов
+Полученную таблицу соеденяем с помощью JOIN с талицей Passenger по ключу ID_psg и выводятся имена (name) требуемых пассажиров

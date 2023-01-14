@@ -1,0 +1,143 @@
+SELECT ResProv * Result * Znak Result FROM
+	(SELECT  exp(sum(log(abs(res)))) Result FROM
+		(SELECT
+		CASE
+		WHEN Оценка = 'Незачтено' OR Оценка = 'Зачтено' OR Оценка Is Null THEN Null
+		WHEN Оценка < 0 OR Оценка > 0 THEN Оценка
+		END res
+		FROM Ocenki)R )REZ, 
+	(SELECT 
+		CASE
+		WHEN sum(Prov) != Count(Prov) THEN 0
+		ELSE 1 
+		END ResProv 
+	FROM
+	(SELECT CASE 
+	    WHEN Оценка = 'Незачтено' OR Оценка = 'Зачтено' OR Оценка Is Null THEN 1
+		WHEN Оценка = 0 THEN 0
+		ELSE 1
+		END Prov
+ 	FROM Ocenki) P)RP,
+	(SELECT 
+	CASE
+	WHEN Pro % 2 = 0 THEN 1
+	ELSE -1
+	END Znak
+	FROM
+		(SELECT count(Оценка) Pro
+ 		FROM Ocenki 
+		WHERE Оценка < 0 AND Оценка != 'Незачтено' AND Оценка != 'Зачтено') M
+	) MINU	
+
+
+
+// С помощью первого сверху выражения CASE отбираются числовые значения из таблицы  Ocenki, которые нам нужны для вычисления (все 0 игнорируются) и записываются в res таблицы R
+// Далее считается произведение значений по модулю столбца res, результат (он один) записывается в столбец Result таблицы REZ, все значения Null игнорируются агрегатной функцией 
+// Чтобы проверить на наличие нулей в столбце Оценка таблицы Ocenki, спомощью выражения CASE для каждой оценки в столбце Prov соответствует одна запись,
+если в столбце Оценка значение равно 0, то и в столбце Prov оно будер равно 0, если нет, то 1. Таким образом формируется таблица P со столбцом Prov.
+// Далее формируется таблица RP со столбцом ResProv, в котором записывается результат проверки на наличие нуля, результат которой может быть 0 или 1. Результат
+зависит от наличия хотябы одного нуля в столбце Prov, если такой присутствует то в ResProv записывается 0, если нет, то 1.
+// Так же производится проверка на знак будущего произведения: в столбце Оценки таблицы Ocenki считается колличество отрицательных значений, если оно нечетное, 
+то в таблицу MINU в столбец Znak записывается -1, если четное - 1.
+// В конце значения, полученные в таблицах REZ, RP, MINU перемножаются.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT 
+	CASE
+	WHEN sum(Prov) != Count(Prov) THEN 0
+	ELSE exp(sum(log(res))) END Result
+FROM (SELECT O.КодОцен, res, Prov
+	  FROM Ocenki O  INNER JOIN
+		(SELECT КодОцен,
+		CASE
+		WHEN Оценка = 'Незачтено' OR Оценка = 'Зачтено' OR Оценка Is Null THEN Null
+		ELSE Оценка
+		END res,
+		CASE WHEN Оценка = 0 THEN 0
+		ELSE 1
+		END Prov
+		FROM Ocenki) R 
+	  ON O.КодОцен = R.КодОцен WHERE res Is Not Null) R 
+
+
+
+
+
+
+
+SELECT 
+	CASE
+	WHEN sum(Prov) != Count(Prov) THEN 0
+	ELSE 1 
+	END ResProv 
+ FROM
+	(SELECT CASE 
+		WHEN Оценка = 0 THEN 0
+		ELSE 1
+		END Prov
+ 	FROM Ocenki) P
+
+
+
+
+
+exp(sum(log(res)))*ResProv
+
+	CASE 
+	WHEN Оценка = 0 THEN 0
+	ELSE 1
+	END Prov
+
+	CASE
+	WHEN sum(Prov) != Count(Prov) THEN 0
+	ELSE 1 
+	END ResProv 
+
+
+
+
+
+
+
+
+
+SELECT 
+CASE
+WHEN res = 'Zero' THEN sum(0+0)
+ELSE exp(sum(log(res))) 
+END Result
+FROM    (SELECT res
+	FROM Ocenki O  INNER JOIN
+		(SELECT КодОцен,
+		CASE
+		WHEN Оценка = 'Незачтено' OR Оценка = 'Зачтено' OR Оценка Is Null THEN Null
+		WHEN Оценка < 0 OR Оценка > 0 THEN Оценка
+		WHEN Оценка = 0 THEN 'Zero'
+		END res
+		FROM Ocenki) R 
+	ON O.КодОцен = R.КодОцен WHERE res Is Not Null) R

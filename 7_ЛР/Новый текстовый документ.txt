@@ -1,0 +1,114 @@
+SELECT ID_psg, count(ID_comp) Count from Pass_in_trip P JOIN Trip T
+ON P.trip_no = T.trip_no
+GROUP BY ID_psg
+HAVING count(ID_comp) >= 2
+
+
+SELECT ID_psg, ID_comp, count(uno) uno
+FROM
+	(SELECT ID_psg, ID_comp, 
+	  CASE 
+	  WHEN ID_comp IS NOT NULL THEN 1
+	  ELSE 0
+	END uno
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no) S
+GROUP BY ID_psg, ID_comp
+
+
+SELECT ID_psg, ID_comp FROM
+(SELECT ID_psg, ID_comp, count(uno) uno
+FROM
+(SELECT ID_psg, ID_comp, 
+CASE 
+WHEN ID_comp IS NOT NULL THEN 1
+ELSE 0
+END uno
+FROM Pass_in_trip P JOIN Trip T
+ON P.trip_no = T.trip_no) S
+GROUP BY ID_psg, ID_comp) L
+
+
+SELECT ID_psg, ID_comp, count(1) uno
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no
+GROUP BY ID_psg, ID_comp
+
+WITH AL AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no)
+
+SELECT * FROM
+  (SELECT ID_psg, ID_comp, count(1) uno
+	FROM AL
+  GROUP BY ID_psg, ID_comp) F
+JOIN
+  (SELECT ID_psg, ID_comp, count(1) uno
+	FROM AL
+  GROUP BY ID_psg, ID_comp) S
+
+WHERE F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno
+
+
+
+WITH AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no
+GROUP BY ID_psg, ID_comp)
+
+SELECT * FROM AL
+
+
+WITH AL AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no)
+
+SELECT ID_psg FROM
+  (SELECT DISTINCT F.ID_psg ID_psg1, S.ID_psg ID_psg2 FROM
+    (SELECT ID_psg, ID_comp, count(1) uno
+	FROM AL
+    GROUP BY ID_psg, ID_comp) F
+  CROSS JOIN  
+    (SELECT ID_psg, ID_comp, count(1) uno
+	FROM AL
+    GROUP BY ID_psg, ID_comp) S
+  WHERE F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno) F
+JOIN 
+  (SELECT ID_psg, count(ID_comp) Count from AL
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2) S
+WHERE F.ID_psg = S.ID_psg
+
+
+
+
+WITH A AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no),
+AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no
+   GROUP BY ID_psg, ID_comp)
+
+SELECT DISTINCT F.ID_psg1, F.ID_psg2 FROM
+  (SELECT F.ID_psg ID_psg1 , S.ID_psg ID_psg2 FROM
+    AL F
+  JOIN
+    AL S
+  ON F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno) F
+JOIN
+  (SELECT ID_psg, count(ID_comp) Count FROM A
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2) S
+ON  F.ID_psg1 = S.ID_psg
+
+
+
+SELECT F.ID_psg ID_psg1, F.ID_comp ID_comp1, S.ID_psg ID_psg2, S.ID_comp ID_comp2, F.uno uno1, S.uno uno2 FROM
+    AL F JOIN AL S
+ON F.ID_comp = S.ID_comp AND F.uno = S.uno AND F.ID_psg != S.ID_psg

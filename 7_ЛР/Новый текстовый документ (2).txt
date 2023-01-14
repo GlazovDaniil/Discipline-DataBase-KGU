@@ -1,0 +1,151 @@
+WITH A AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no),
+AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM A
+   GROUP BY ID_psg, ID_comp),
+PP AS
+(SELECT DISTINCT F.ID_psg1, F.ID_psg2 FROM
+  (SELECT F.ID_psg ID_psg1 , S.ID_psg ID_psg2 FROM
+    AL F
+  JOIN
+    AL S
+  ON F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno) F
+JOIN
+  (SELECT ID_psg, count(ID_comp) Count FROM A
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2) S
+ON  F.ID_psg1 = S.ID_psg)
+
+SELECT name FROM Passenger F JOIN
+  (SELECT DISTINCT F.ID_psg1 FROM 
+   PP F
+  JOIN
+   PP S
+  ON F.ID_psg1 + ' ' + F.ID_psg2 = S.ID_psg2 + ' ' + S.ID_psg1) S
+ON ID_psg1 = ID_psg
+
+
+
+
+
+WITH A AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no),
+AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM A
+   GROUP BY ID_psg, ID_comp),
+DUO AS 
+(SELECT ID_psg, count(ID_comp) Count FROM A
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2),
+LL AS 
+(SELECT F.ID_psg ID_psg1, S.ID_psg ID_psg2 FROM
+    AL F
+  JOIN
+    AL S
+  ON F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno)
+
+SELECT DISTINCT F.ID_psg1 FROM
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg1 = ID_psg) F
+INNER JOIN
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg1 = ID_psg) S
+ON F.ID_psg1 + ' ' + F.ID_psg2 = S.ID_psg2 + ' ' + S.ID_psg1 
+  AND F.ID_psg1 != S.ID_psg1 
+  AND F.Count = S.Count 
+GROUP BY F.ID_psg1
+
+
+-----------------------------------------------------
+
+WITH A AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no),
+AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM A
+   GROUP BY ID_psg, ID_comp),
+DUO AS 
+(SELECT ID_psg, count(ID_comp) Count FROM A
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2),
+LL AS 
+(SELECT F.ID_psg ID_psg1, S.ID_psg ID_psg2 FROM
+    AL F
+  JOIN
+    AL S
+  ON F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno)
+
+SELECT name from Passenger F JOIN
+(SELECT DISTINCT F.ID_psg1 FROM
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg1 = ID_psg) F
+INNER JOIN
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg1 = ID_psg) S
+ON F.ID_psg1 = S.ID_psg2 
+  AND F.ID_psg2 = S.ID_psg1 
+  AND F.ID_psg1 != S.ID_psg1 
+  AND F.Count = S.Count 
+GROUP BY F.ID_psg1) S
+ON S.ID_psg1= F.ID_psg
+
+-------------------------------------------------------
+WITH A AS
+(SELECT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no),
+AL AS
+(SELECT ID_psg, ID_comp, count(1) uno
+	FROM A
+   GROUP BY ID_psg, ID_comp),
+DUO AS 
+(SELECT ID_psg, count(ID_comp) Count FROM 
+        (SELECT DISTINCT ID_psg, ID_comp
+	FROM Pass_in_trip P JOIN Trip T
+	ON P.trip_no = T.trip_no) F
+    GROUP BY ID_psg
+    HAVING count(ID_comp) >= 2),
+LL AS 
+(SELECT F.ID_psg ID_psg1, S.ID_psg ID_psg2 FROM
+    AL F
+  JOIN
+    AL S
+  ON F.ID_psg != S.ID_psg AND F.ID_comp = S.ID_comp AND F.uno = S.uno),
+OUCH AS
+(SELECT F.ID_psg1, S.ID_psg1 ID_psg2, count(F.ID_psg1) con FROM
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg1 = ID_psg) F
+INNER JOIN
+  (SELECT * FROM
+    LL F
+  JOIN
+    DUO S
+  ON ID_psg2 = ID_psg) S
+ON  F.ID_psg1 = S.ID_psg2 AND F.ID_psg2 = S.ID_psg1
+GROUP BY F.ID_psg1, S.ID_psg1)
+
+SELECT DISTINCT F.ID_psg1, F.ID_psg2, F.con 
+FROM OUCH F
