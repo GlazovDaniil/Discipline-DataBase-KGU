@@ -1,0 +1,31 @@
+WITH DUO AS
+(SELECT ID_psg, count(ID_comp) Count
+FROM (SELECT DISTINCT ID_psg, ID_comp
+      FROM Pass_in_trip P JOIN Trip T
+      ON P.trip_no = T.trip_no) F
+   GROUP BY ID_psg
+   HAVING count(ID_comp) >= 2),
+IdPas AS
+(SELECT ID_psg, ID_comp,
+   max(count(*)) over (partition by ID_psg) MaxTrip,
+   min(count(*)) over (partition by ID_psg) MinTrip
+FROM Pass_in_trip P JOIN Trip T
+ON P.trip_no = T.trip_no
+GROUP BY ID_psg, ID_comp),
+EndId AS
+(SELECT DISTINCT F.ID_psg FROM DUO JOIN IdPas S
+ON F.ID_psg = S.ID_psg
+WHERE MaxTrip = MinTrip)
+
+SELECT name FROM Passenger F JOIN EndId S
+ON F.ID_psg = S.ID_psg
+
+Сначала собираются ИД человек, летавших как минимум на 2х авиокомпаниях
+Для каждого пассажира собирается информация по компаниям сколько разон максимум и минимум
+летал компаниями
+Далее отбираются пассажиры которые летали как минимум на 2х авиокомпаниях, 
+если максимум и минимум полетов совпадают (совершал одинаковое колличество полётов каждой из 
+авиокомпаниий) путем соединения двух ранее полученных таблиц по ИД пассажира
+
+Формируется итоговая таблица с именами пассажиров, путем соединения двух талиц по
+ИД пассажира

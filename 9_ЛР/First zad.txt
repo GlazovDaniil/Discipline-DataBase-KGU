@@ -1,0 +1,80 @@
+WITH a AS
+(SELECT F.maker, F.model 
+  FROM Product F LEFT JOIN
+     (SELECT DISTINCT maker 
+       FROM Product P JOIN Printer L
+       ON P.model = L.model) S
+  ON F.maker = S.maker WHERE S.maker IS NULL)
+
+DELETE FROM Laptop
+WHERE model IN (SELECT model FROM a)
+
+
+
+WITH a AS
+(SELECT F.maker, model
+  FROM (SELECT maker, model FROM Product
+           WHERE type != 'Printer' AND type = 'Laptop'
+          GROUP BY maker, model) F LEFT JOIN
+     (SELECT maker 
+       FROM Product P JOIN Printer L
+       ON P.model = L.model) S
+  ON F.maker = S.maker WHERE S.maker IS NULL)
+
+DELETE FROM Laptop
+WHERE model IN (SELECT model FROM a)
+
+
+INSERT INTO PC (code, model, speed, ram, hd, cd, price)
+ SELECT S.code, S.model, S.speed, S.ram, S.hd, F.cd cd, S.price 
+   FROM 
+     (SELECT max(cd) cd FROM PC) F
+   CROSS JOIN
+     (SELECT min(code) + 20 code, F.model + 1000 model,  
+      max(speed) speed, max(ram) * 2 ram, max(hd) * 2 hd, 
+      max(price)/1.5 price 
+        FROM Laptop F 
+        JOIN
+        (SELECT model, count(model) mod FROM Laptop 
+           GROUP BY model
+           HAVING count(model)>1) S
+        ON F.model = S.model
+     GROUP BY F.model) S
+
+
+INSERT INTO PC (code, model, speed, ram, hd, cd, price)
+SELECT S.code, S.model, S.speed, S.ram, S.hd, F.cd cd, S.price 
+   FROM 
+     (SELECT max(cd) cd FROM PC) F
+   CROSS JOIN
+     (SELECT min(code) + 20 code, F.model + 1000 model,  
+      max(speed) speed, max(ram) * 2 ram, max(hd) * 2 hd, 
+      max(price)/1.5 price 
+        FROM Laptop F 
+      GROUP BY F.model) S
+
+Delete From Classes
+Where class not in (select t.class From
+   (Select class, count(class) numb From Ships
+   Group by class
+Union All
+   Select ship class, count(ship) numb From outcomes
+   Where ship not in (Select name from Ships)
+   Group by ship) t
+Group by t.class
+Having sum(t.numb)>=3)
+
+
+
+======================================================
+DELETE FROM Classes
+WHERE 
+  class IN (SELECT class FROM Ships F JOIN
+    (SELECT ship, result FROM Outcomes WHERE result != 'sunk') S
+     ON F.name = S.ship
+     GROUP BY class
+     HAVING count(class) < 3)
+OR
+  class IN (SELECT class FROM Ships
+     GROUP BY class
+     HAVING count(class) < 3)

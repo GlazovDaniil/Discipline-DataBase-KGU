@@ -1,0 +1,41 @@
+SELECT КодГр, Фам, Имя, Отчество, СрБалл FROM Students S INNER JOIN 
+		(SELECT Knij, avg(Och/1.0) СрБалл 
+		FROM (SELECT Knij, Och FROM 
+				(SELECT НомЗачКниж Knij, Оценка Och FROM Ocenki WHERE Оценка = '4' OR Оценка = '5' ) A LEFT JOIN
+				(SELECT * FROM Ocenki WHERE Оценка = 'Незачтено' OR Оценка = '2' OR Оценка = '3') B 
+				ON A.Knij = B.НомЗачКниж WHERE B.НомЗачКниж IS NULL) O
+		GROUP BY Knij
+		HAVING avg(Och/1.0) >= 4.75) O 
+	ON S.НомЗачКниж = O.Knij
+	WHERE  КодГр = '21-КБ-5'
+	ORDER BY СрБалл DESC
+
+	DROP Index StudentsInd ON Students
+	DROP Index OcenkiInd ON Ocenki
+	DROP Index OcenkiOc ON Ocenki
+
+	Create Index StudentsInd ON Students (КодГр)
+	Create Index OcenkiInd On Ocenki (Оценка, НомЗачКниж)
+	Create Index OcenkiOc ON Ocenki (Оценка)
+
+-------------------------------------------------------------------------------------
+
+SELECT КодГр, Фам, Имя, Отчество, СрБалл FROM Students S JOIN 
+		(SELECT A.НомЗачКниж, СрБалл
+		FROM    (SELECT НомЗачКниж , avg(Оценка/1.0) СрБалл FROM Ocenki 
+				WHERE Оценка = '4' OR Оценка = '5' 
+				GROUP BY НомЗачКниж
+				HAVING avg(Оценка/1.0) >= 4.75) A LEFT JOIN
+				(SELECT * FROM Ocenki WHERE Оценка = 'Незачтено' OR Оценка = '2' OR Оценка = '3') B 
+				ON A.НомЗачКниж = B.НомЗачКниж WHERE B.НомЗачКниж IS NULL) O 
+	ON S.НомЗачКниж = O.НомЗачКниж
+	WHERE  КодГр = '20-ИС-1'
+	ORDER BY СрБалл DESC
+
+	DROP Index StudentsInd ON Students
+	DROP Index OcenkiInd ON Ocenki   
+	DROP Index OcenkiOc ON Ocenki
+
+	Create Index StudentsInd ON Students (КодГр)
+	Create Index OcenkiInd On Ocenki (НомЗачКниж)  -- робит
+	Create Index OcenkiOc ON Ocenki (Оценка) -- робит

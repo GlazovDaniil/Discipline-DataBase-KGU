@@ -1,0 +1,10 @@
+SELECT * FROM Students S INNER JOIN 
+		(SELECT Knij, avg(Och/1.0) СрБалл 
+		FROM (	SELECT Knij, Och FROM 
+				(SELECT НомЗачКниж Knij, Оценка Och FROM Ocenki WHERE Оценка = '4' OR Оценка = '5' OR Оценка = '3') A LEFT JOIN
+				(SELECT * FROM Ocenki WHERE Оценка = 'Незачтено' OR Оценка = '2') B 
+				ON A.Knij = B.НомЗачКниж WHERE B.НомЗачКниж IS NULL) O
+		GROUP BY Knij
+		HAVING avg(Och/1.0) >= 4.75) O 
+	ON S.НомЗачКниж = O.Knij
+	ORDER BY СрБалл

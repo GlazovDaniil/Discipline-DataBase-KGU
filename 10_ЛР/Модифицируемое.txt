@@ -1,0 +1,10 @@
+CREATE VIEW InsEar19
+AS
+SELECT * FROM Students S
+ 	WHERE ГодПост = 2019
+
+INSERT into InsEar19 values('19-ИС-022','Поставин', 'Георгий','Михаилович', '2019', '2024', '19-ИС-1' )
+
+DELETE FROM InsEar19 WHERE Фам = 'Поставин'
+
+select * from InsEar19 

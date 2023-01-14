@@ -1,0 +1,13 @@
+CREATE VIEW AvgBall
+AS
+SELECT КодГр, avg(res/1.0) СрБалл FROM Students F JOIN
+	(SELECT НомЗачКниж,
+	CASE
+	WHEN Оценка = 'Незачтено' OR Оценка = 'Зачтено' OR Оценка Is Null THEN Null
+	ELSE Оценка
+	END res
+	FROM Ocenki) S
+ON F.НомЗачКниж = S.НомЗачКниж AND res IS NOT Null
+GROUP BY КодГр
+
+SELECT * FROM AvgBall

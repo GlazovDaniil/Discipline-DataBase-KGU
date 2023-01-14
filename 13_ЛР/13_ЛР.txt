@@ -1,0 +1,13 @@
+
+DECLARE @tablename as varchar(50); --создание переменной, чтобы в нее записывать название таблицы
+DECLARE  MyCursor CURSOR FOR --создание курсора
+SELECT name FROM sys.tables --систаемная таблица с перечислением всех таблиц в которой создан курсор по полю "имя"
+OPEN MyCursor --открытие курсора
+FETCH next FROM MyCursor INTO @tablename --переход к следующей записи в крсоре
+WHILE @@FETCH_STATUS = 0 --пока выборка завершается с кодом 0 (успешно)
+BEGIN
+	EXEC('SELECT top 10 * FROM '+ '['+ @tablename + ']')  --выполняется вывод верхних 10 строк из очередной таблицы из sys.tables столбца name
+	FETCH next FROM MyCursor INTO @tablename --переход к следующей записи в крсоре
+END
+CLOSE MyCursor --закрытие курсора
+DEALLOCATE MyCursor --удаление курсора

@@ -1,0 +1,48 @@
+SELECT row_number() over(ORDER BY maker, type) num, maker, type FROM Product
+GROUP BY maker, type
+ORDER BY maker
+
+
+
+WITH rez AS
+(SELECT row_number() over(ORDER BY maker, type) num, 
+  row_number() over(partition BY maker ORDER BY maker, type) NumMaker, 
+  maker,
+  type FROM Product
+GROUP BY num, maker, type
+ORDER BY maker)
+
+SELECT num, 
+CASE 
+  WHEN NumMaker = 1 THEN maker
+  ELSE ''
+  END maker,
+type FROM rez
+
+=====================================
+WITH First AS
+ (SELECT DISTINCT maker,
+   CASE 
+     WHEN type = 'PC' THEN 1
+     WHEN type = 'Laptop' THEN 2
+     ELSE 3
+     END NumType,
+  type FROM Product),
+Second AS 
+ (SELECT row_number() over(ORDER BY maker, NumType) num, 
+   row_number() over(partition BY maker ORDER BY maker, NumType) NumMaker, 
+   maker,  
+   type FROM First)
+
+SELECT num, 
+CASE 
+  WHEN NumMaker = 1 THEN maker
+  ELSE ''
+  END maker, type FROM Second
+=============================================================
+Как работает
+Сначала нумеруем в нужной последовательности типы (ПК = 1, Ноуты = 2, остальные (принтеры) = 3) и отметаем повторяющиеся записи
+Далее идет сквозная нумерация строк по производителю и номеру типа, чтобы потом название производителя была в нужном месте (в первой записи).
+идет нумерация производителей в кадрах самих производителей и сортируются по производителю и номеру типа (чтобы номер типа 1 был вместе номером производителя 1)
+В запросе вызываются номер запесей, названия производителей в соответствии с правилами: 
+"Если некий производитель выпускает несколько типов продукции, то выводить его имя только в первой строке;" с помощью CASE, выводится тип продукции

@@ -1,0 +1,51 @@
+CREATE TRIGGER TrigerGroups
+   ON dbo.Vedomost
+   AFTER INSERT
+   AS 
+BEGIN
+
+	IF @@ROWCOUNT=1 -- Проверка на вставку одной записи
+	BEGIN
+     -- Объявляем переменные
+		DECLARE @Номер_ведомости as char (9), 
+				@Семестр as tinyint, 
+				@Учебный_год as int, 
+				@Дата_проведения as date, 
+				@Средний_балл as decimal(3, 2), 
+				@Код_вида_контроля as tinyint, 
+				@Идентификатор_дисциплины  as char(8), 
+				@Код_группы as varchar(8),
+				@Код_экзаменатора as char(15)
+
+     -- Присваиваем переменным значения из добавляемой записи
+		SELECT  @Номер_ведомости=inserted.[НомВед], 
+				@Семестр=inserted.[Семестр], 
+				@Учебный_год=inserted.[УчГод], 
+				@Дата_проведения=inserted.[ДатПров], 
+				@Средний_балл=inserted.[СрБалл], 
+				@Код_вида_контроля=inserted.[КодВидКонтр], 
+				@Идентификатор_дисциплины=inserted.[ИндифДисц], 
+				@Код_группы=inserted.[КодГр],
+				@Код_экзаменатора=inserted.[КодЭкзаменатора]
+		FROM inserted
+
+		DECLARE @count_par as int -- объявляем переменную для подсчета записей
+		SELECT @count_par=count(*) 
+		FROM dbo.Vedomost
+		WHERE [ДатПров]=@Дата_проведения 
+		  and [КодГр]=@Код_группы
+		IF @count_par > 1 -- если есть другие записи в таблице, кроме только что добавленной нами, подходящие под наши условие, отменяем транзакцию
+			BEGIN
+				PRINT 'У этогй группы в этот день есть сдача контроля'
+				ROLLBACK TRAN	
+			END
+	END
+END
+
+
+SELECT * FROM Vedomost
+
+INSERT INTO Vedomost
+VALUES ('2122-9556', 3, '2021-2022', '2022-06-17', 0, 1, '09-03-23', '20-ИС-1', '440-010-001-011' )
+
+SELECT * FROM Vedomost
